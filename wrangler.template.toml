@@ -1,0 +1,12 @@
+name = "optidomains-testnet-indexer"
+main = "src/index.ts"
+compatibility_date = "2023-02-27"
+
+[env.dev]
+  [env.dev.vars]
+    SUPABASE_KEY = ""
+    DATA_TABLE = ""
+
+
+[triggers]
+crons = [ "* * * * *" ]
