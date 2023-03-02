@@ -12,6 +12,7 @@
 
 import { ethers } from "ethers";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import ETHRegistrarControllerABI from "./ETHRegistrarController.json";
 
 export interface Env {
   // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
@@ -19,6 +20,7 @@ export interface Env {
 
   SUPABASE_KEY: string;
   DATA_TABLE: string;
+  BACKEND_PK: string;
 
   //
   // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
@@ -35,22 +37,24 @@ const CHAIN_CONFIG = {
   // 	chainId: 420,
   // 	startingBlock: ,
   // },
-  // base_goerli: {
-  // 	url: `https://goerli.base.org`,
-  // 	tags: ['test', 'use_root'],
-  // 	chainId: 84531,
-  // 	startingBlock: 	1138000,
-  // 	blockLimit: 1000,
-  // 	contractAddress: '',
-  // },
-  'evm_5': {
-    url: `https://eth-goerli.g.alchemy.com/v2/Kb0-sSQHUeURzm-QCj-pXKS0Viefa_kX`,
-    tags: ["test", "use_root"],
-    chainId: 5,
-    startingBlock: 8555300,
-    blockLimit: 100,
-    contractAddress: "0x4a7c7a621834ae33282ae71e403b94ac11024070",
+  evm_84531: {
+  	url: `https://goerli.base.org`,
+  	tags: ['test', 'use_root'],
+  	chainId: 84531,
+  	startingBlock: 	1138000,
+  	blockLimit: 1000,
+  	contractAddress: '0x88D711a0BAc694e7C2D71Fcd7AC7896A02970911',
+  	registrarControllerAddress: '0xE11572B0F18DC78F30cDDf44c402a5B79511105A',
   },
+  // evm_5: {
+  //   url: `https://eth-goerli.g.alchemy.com/v2/Kb0-sSQHUeURzm-QCj-pXKS0Viefa_kX`,
+  //   tags: ["test", "use_root"],
+  //   chainId: 5,
+  //   startingBlock: 8555300,
+  //   blockLimit: 100,
+  //   contractAddress: "0x4a7c7a621834ae33282ae71e403b94ac11024070",
+  //   registrarControllerAddress: "",
+  // },
 };
 
 function decodeName(hex: string): string {
@@ -238,12 +242,50 @@ async function handleRequest(context: Context, route: string[], body: any) {
     }
 
     case 'commit': {
-      // Sign commitment form backend
-      if (!body.chain) {
+      // Sign commitment from backend
+      if (!body.chainId) {
         throw new Error("Chain ID is required")
       }
 
-      break;
+      const chainName = 'evm_' + body.chainId
+      const chainConfig = CHAIN_CONFIG[chainName];
+
+      const privateKey = context.env.BACKEND_PK;
+      const provider = new ethers.providers.JsonRpcProvider({
+        url: chainConfig.url,
+        skipFetchSetup: true,
+      });
+      
+      // Call the makeCommitment function with the specified value
+      const contract = new ethers.Contract(chainConfig.registrarControllerAddress, ETHRegistrarControllerABI, provider);
+      const commitment = await contract.makeCommitment(
+        body.name,
+        body.owner,
+        body.duration,
+        body.secret,
+        body.resolver,
+        body.data,
+        body.reverseRecord,
+        body.ownerControlledFuses,
+      );
+
+      const commitmentTimestamp = await contract.commitments(commitment);
+
+      // Define the input types and values of the transaction data
+      const inputTypes = ['bytes32', 'uint256', 'uint256'];
+      const inputValues = [commitment, commitmentTimestamp, body.chainId];
+      
+      // ABI-encode the transaction data
+      const abiEncodedTransactionData = ethers.utils.defaultAbiCoder.encode(inputTypes, inputValues);
+      
+      const signingKey = new ethers.utils.SigningKey(privateKey);
+      const signature = signingKey.signDigest(ethers.utils.keccak256(abiEncodedTransactionData));
+      
+      return {
+        signature: ethers.utils.hexlify(
+          ethers.utils.concat([signature.r, signature.s, ethers.utils.hexlify(signature.v)])
+        ),
+      };
     }
   }
 }

@@ -6,6 +6,7 @@ compatibility_date = "2023-02-27"
   [env.dev.vars]
     SUPABASE_KEY = ""
     DATA_TABLE = ""
+    BACKEND_PK = ""
 
 
 [triggers]
