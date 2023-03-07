@@ -50,7 +50,7 @@ const CHAIN_CONFIG = {
     url: `https://goerli.base.org`,
     tags: ["test", "use_root"],
     chainId: 84531,
-    startingBlock: 1138000,
+    startingBlock: 1496000,
     blockLimit: 1000,
     contractAddress: "0x88D711a0BAc694e7C2D71Fcd7AC7896A02970911",
     registrarControllerAddress: "0xE11572B0F18DC78F30cDDf44c402a5B79511105A",
@@ -283,6 +283,20 @@ async function handleRequest(context: Context, route: string[], body: any) {
         url: chainConfig.url,
         skipFetchSetup: true,
       });
+
+      // If .base then check if owned .opti
+      const parts: string[] = body.name.split(".")
+      if (parts[parts.length - 1] == 'base') {
+        const records = await getRecordByName(context, parts.slice(0, -1).join('.') + '.opti')
+        const record = records?.find(x => x.chain == 'evm_420')
+        if (!record) {
+          throw new Error("Not owning .opti yet");
+        }
+
+        if (record.owner.toLowerCase() != body.owner.toLowerCase()) {
+          throw new Error("Not owner");
+        }
+      }
 
       // Call the makeCommitment function with the specified value
       const contract = new ethers.Contract(
