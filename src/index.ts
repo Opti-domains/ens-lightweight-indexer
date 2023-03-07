@@ -30,21 +30,30 @@ export interface Env {
   // MY_BUCKET: R2Bucket;
 }
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+  "Access-Control-Max-Age": "86400",
+};
+
 const CHAIN_CONFIG = {
-  // optimism_goerli: {
-  // 	url: `https://goerli.optimism.io`,
-  // 	tags: ['test', 'use_root'],
-  // 	chainId: 420,
-  // 	startingBlock: ,
-  // },
-  evm_84531: {
-  	url: `https://goerli.base.org`,
+  evm_420: {
+  	url: `https://goerli.optimism.io`,
   	tags: ['test', 'use_root'],
-  	chainId: 84531,
-  	startingBlock: 	1138000,
-  	blockLimit: 1000,
-  	contractAddress: '0x88D711a0BAc694e7C2D71Fcd7AC7896A02970911',
-  	registrarControllerAddress: '0xE11572B0F18DC78F30cDDf44c402a5B79511105A',
+  	chainId: 420,
+  	startingBlock: 6379000,
+    blockLimit: 1000,
+    contractAddress: "0x257fAeE65b16A74470ceFc3a87113f92C5A7A148",
+    registrarControllerAddress: "0xDDE3a172111533323f8f3C1e21c87905267a1844",
+  },
+  evm_84531: {
+    url: `https://goerli.base.org`,
+    tags: ["test", "use_root"],
+    chainId: 84531,
+    startingBlock: 1138000,
+    blockLimit: 1000,
+    contractAddress: "0x88D711a0BAc694e7C2D71Fcd7AC7896A02970911",
+    registrarControllerAddress: "0xE11572B0F18DC78F30cDDf44c402a5B79511105A",
   },
   // evm_5: {
   //   url: `https://eth-goerli.g.alchemy.com/v2/Kb0-sSQHUeURzm-QCj-pXKS0Viefa_kX`,
@@ -54,6 +63,15 @@ const CHAIN_CONFIG = {
   //   blockLimit: 100,
   //   contractAddress: "0x4a7c7a621834ae33282ae71e403b94ac11024070",
   //   registrarControllerAddress: "",
+  // },
+  // evm_5: {
+  //   url: `https://eth-goerli.g.alchemy.com/v2/Kb0-sSQHUeURzm-QCj-pXKS0Viefa_kX`,
+  //   tags: ["test", "use_root"],
+  //   chainId: 5,
+  //   startingBlock: 8555300,
+  //   blockLimit: 100,
+  //   contractAddress: "0xa3412b5849f8ffE009Fc04A6cb177164eb5e909c",
+  //   registrarControllerAddress: "0x3801e62AfF33B6D2708DcE97aa04611894f80a21",
   // },
 };
 
@@ -75,20 +93,20 @@ function decodeName(hex: string): string {
     result.push(str);
   }
 
-  return result.join(".").replace('\0', '');
+  return result.join(".").replace("\0", "");
 }
 
 interface Context {
-	supabase: SupabaseClient;
-	env: Env;
+  supabase: SupabaseClient;
+  env: Env;
 }
 
 interface Record {
-	chain: string;
+  chain: string;
   node: string;
   name: string;
   owner: string;
-	expiry: number;
+  expiry: number;
   block_number: number;
 }
 
@@ -104,98 +122,104 @@ async function getRecord(context: Context, node: string, chain?: string) {
   let promise = context.supabase
     .from(context.env.DATA_TABLE)
     .select("*")
-    .eq('node', node)
+    .eq("node", node);
 
   if (chain) {
-    promise = promise.eq('chain', chain)
+    promise = promise.eq("chain", chain);
   }
 
-	let { data, error } = await promise
+  let { data, error } = await promise;
 
-	if (error) {
-		console.error(error)
-	}
+  if (error) {
+    console.error(error);
+  }
 
-	return data
+  return data;
 }
 
 async function getRecordByName(context: Context, name: string, chain?: string) {
   let promise = context.supabase
     .from(context.env.DATA_TABLE)
     .select("*")
-    .eq('name', name)
+    .eq("name", name);
 
   if (chain) {
-    promise = promise.eq('chain', chain)
+    promise = promise.eq("chain", chain);
   }
 
-	let { data, error } = await promise
+  let { data, error } = await promise;
 
-	if (error) {
-		console.error(error)
-	}
+  if (error) {
+    console.error(error);
+  }
 
-	return data
+  return data;
 }
 
-async function getOwnedDomains(context: Context, owner: string, chain?: string) {
+async function getOwnedDomains(
+  context: Context,
+  owner: string,
+  chain?: string
+) {
   let promise = context.supabase
     .from(context.env.DATA_TABLE)
     .select("*")
-    .eq('owner', owner)
+    .eq("owner", owner);
 
   if (chain) {
-    promise = promise.eq('chain', chain)
+    promise = promise.eq("chain", chain);
   }
 
-	let { data, error } = await promise
+  let { data, error } = await promise;
 
-	if (error) {
-		console.error(error)
-	}
+  if (error) {
+    console.error(error);
+  }
 
-	return data
+  return data;
 }
 
 async function getBlockNumber(context: Context, chain: string) {
-	let { data, error } = await context.supabase
-		.from(context.env.DATA_TABLE + "_blocknumber")
-		.select("*")
-		.eq('chain', chain)
+  let { data, error } = await context.supabase
+    .from(context.env.DATA_TABLE + "_blocknumber")
+    .select("*")
+    .eq("chain", chain);
 
-	if (error) {
-		console.error(error)
-	}
+  if (error) {
+    console.error(error);
+  }
 
-	if (!data || !data.length) {
-		return CHAIN_CONFIG[chain].startingBlock;
-	} else {
-		return data[0].block_number;
-	}
+  if (!data || !data.length) {
+    return CHAIN_CONFIG[chain].startingBlock;
+  } else {
+    return data[0].block_number;
+  }
 }
 
 // Update function
 async function updateOwner(context: Context, records: RecordUpdate[]) {
   for (let record of records) {
-    console.log("Update owner", record.node, record.owner)
+    console.log("Update owner", record.node, record.owner);
   }
 
-  const { data, error } = await context.supabase
-    .rpc('update_many_' + context.env.DATA_TABLE, {
+  const { data, error } = await context.supabase.rpc(
+    "update_many_" + context.env.DATA_TABLE,
+    {
       payload: records.map((record) => ({
         ...record,
         updated_at: new Date(),
-      }))
-    })
+      })),
+    }
+  );
 
-	if (error) {
-		console.error(error)
-	}
+  if (error) {
+    console.error(error);
+  }
 }
 
 async function insertRecords(context: Context, records: Record[]) {
   const { data, error } = await context.supabase
-		.from(context.env.DATA_TABLE)
+    .from(context.env.DATA_TABLE)
     .upsert(
       records.map((record) => ({
         ...record,
@@ -203,51 +227,55 @@ async function insertRecords(context: Context, records: Record[]) {
       }))
     );
 
-	if (error) {
-		console.error(error)
-	}
+  if (error) {
+    console.error(error);
+  }
 }
 
-async function updateBlockNumber(context: Context, chain: string, blockNumber: number) {
+async function updateBlockNumber(
+  context: Context,
+  chain: string,
+  blockNumber: number
+) {
   const { data, error } = await context.supabase
-		.from(context.env.DATA_TABLE + "_blocknumber")
+    .from(context.env.DATA_TABLE + "_blocknumber")
     .upsert([
-			{
-				chain,
-				block_number: blockNumber,
-				updated_at: new Date(),
-			}
-		]);
+      {
+        chain,
+        block_number: blockNumber,
+        updated_at: new Date(),
+      },
+    ]);
 
-	if (error) {
-		console.error(error)
-	}
+  if (error) {
+    console.error(error);
+  }
 }
 
 async function handleRequest(context: Context, route: string[], body: any) {
   switch (route[0]) {
-    case 'node': {
+    case "node": {
       const node = route[1];
       return await getRecord(context, node, body.chain);
     }
 
-    case 'name': {
+    case "name": {
       const name = route[1];
       return await getRecordByName(context, name, body.chain);
     }
 
-    case 'owner': {
+    case "owner": {
       const owner = route[1];
       return await getOwnedDomains(context, owner, body.chain);
     }
 
-    case 'commit': {
+    case "commit": {
       // Sign commitment from backend
       if (!body.chainId) {
-        throw new Error("Chain ID is required")
+        throw new Error("Chain ID is required");
       }
 
-      const chainName = 'evm_' + body.chainId
+      const chainName = "evm_" + body.chainId;
       const chainConfig = CHAIN_CONFIG[chainName];
 
       const privateKey = context.env.BACKEND_PK;
@@ -255,9 +283,13 @@ async function handleRequest(context: Context, route: string[], body: any) {
         url: chainConfig.url,
         skipFetchSetup: true,
       });
-      
+
       // Call the makeCommitment function with the specified value
-      const contract = new ethers.Contract(chainConfig.registrarControllerAddress, ETHRegistrarControllerABI, provider);
+      const contract = new ethers.Contract(
+        chainConfig.registrarControllerAddress,
+        ETHRegistrarControllerABI,
+        provider
+      );
       const commitment = await contract.makeCommitment(
         body.name,
         body.owner,
@@ -266,99 +298,149 @@ async function handleRequest(context: Context, route: string[], body: any) {
         body.resolver,
         body.data,
         body.reverseRecord,
-        body.ownerControlledFuses,
+        body.ownerControlledFuses
       );
 
-      const commitmentTimestamp = await contract.commitments(commitment);
+      // const commitmentTimestamp = await contract.commitments(commitment);
+      const commitmentTimestamp = body.commitmentTimestamp;
 
       // Define the input types and values of the transaction data
-      const inputTypes = ['bytes32', 'uint256', 'uint256'];
+      const inputTypes = ["bytes32", "uint256", "uint256"];
       const inputValues = [commitment, commitmentTimestamp, body.chainId];
-      
+
+      console.log(inputValues)
+
       // ABI-encode the transaction data
-      const abiEncodedTransactionData = ethers.utils.defaultAbiCoder.encode(inputTypes, inputValues);
-      
+      const abiEncodedTransactionData = ethers.utils.defaultAbiCoder.encode(
+        inputTypes,
+        inputValues
+      );
+
+      console.log(ethers.utils.keccak256(abiEncodedTransactionData))
+
       const signingKey = new ethers.utils.SigningKey(privateKey);
-      const signature = signingKey.signDigest(ethers.utils.keccak256(abiEncodedTransactionData));
-      
+      const signature = signingKey.signDigest(
+        ethers.utils.keccak256(abiEncodedTransactionData)
+      );
+
+      console.log(signature)
+
       return {
         signature: ethers.utils.hexlify(
-          ethers.utils.concat([signature.r, signature.s, ethers.utils.hexlify(signature.v)])
+          ethers.utils.concat([
+            signature.r,
+            signature.s,
+            ethers.utils.hexlify(signature.v),
+          ])
         ),
       };
     }
   }
 }
 
-export default {
-  async fetch(
-		request: Request,
-		env: Env,
-		ctx: ExecutionContext
+function handleOptions(request) {
+  // Make sure the necessary headers are present
+  // for this to be a valid pre-flight request
+  let headers = request.headers;
+  if (
+    headers.get("Origin") !== null &&
+    headers.get("Access-Control-Request-Method") !== null &&
+    headers.get("Access-Control-Request-Headers") !== null
   ) {
+    // Handle CORS pre-flight request.
+    // If you want to check or reject the requested method + headers
+    // you can do that here.
+    let respHeaders = {
+      ...corsHeaders,
+      // Allow all future content Request headers to go back to browser
+      // such as Authorization (Bearer) or X-Client-Name-Version
+      "Access-Control-Allow-Headers": request.headers.get(
+        "Access-Control-Request-Headers"
+      ),
+    };
+    return new Response(null, {
+      headers: respHeaders,
+    });
+  } else {
+    // Handle standard OPTIONS request.
+    // If you want to allow other HTTP Methods, you can do that here.
+    return new Response(null, {
+      headers: {
+        Allow: "GET, HEAD, POST, OPTIONS",
+      },
+    });
+  }
+}
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const { url, method } = request;
-    const route = new URL(url).pathname.substring(1).split('/');
+    const route = new URL(url).pathname.substring(1).split("/");
 
     // Create a URLSearchParams object from the request URL's search params
-    const searchParams = new URLSearchParams(new URL(url).search)
+    const searchParams = new URLSearchParams(new URL(url).search);
 
     // Get an iterator over the search parameters and convert them to an array
-    const searchParamsArray = Array.from(searchParams.entries())
+    const searchParamsArray = Array.from(searchParams.entries());
 
     // Convert the array of search parameters to a JSON object using Object.fromEntries()
-    const searchParamsJson = Object.fromEntries(searchParamsArray)
+    const searchParamsJson = Object.fromEntries(searchParamsArray);
 
     const supabaseUrl = "https://dtdtzmqbttfermhrxnpy.supabase.co";
     const supabaseKey = env.SUPABASE_KEY;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-		const context: Context = {
-			supabase,
-			env,
-		}
+    const context: Context = {
+      supabase,
+      env,
+    };
+
+    let response: Response;
 
     try {
-      if (method == 'POST') {
+      if (method === "OPTIONS") {
+        return handleOptions(request)
+      } else if (method == "POST") {
         const body = await request.json();
-  
-        return new Response(
-          JSON.stringify(
-            await handleRequest(context, route, body)
-          ),
+
+        response = new Response(
+          JSON.stringify(await handleRequest(context, route, body)),
           {
             headers: {
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           }
-        )
+        );
       } else {
-        return new Response(
-          JSON.stringify(
-            await handleRequest(context, route, searchParamsJson)
-          ),
+        response = new Response(
+          JSON.stringify(await handleRequest(context, route, searchParamsJson)),
           {
             headers: {
-              'Content-Type': 'application/json'
-            }
+              "Content-Type": "application/json",
+            },
           }
-        )
+        );
       }
     } catch (err) {
-      console.error(err)
+      console.error(err);
 
-      return new Response(
+      response = new Response(
         JSON.stringify({
-          message: "Internal server error"
+          message: "Internal server error",
         }),
         {
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
           status: 500,
         }
-      )
+      );
     }
-    
+
+    response.headers.set("Access-Control-Allow-Origin", "*")
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+
+    return response
   },
   async scheduled(
     controller: ScheduledController,
@@ -369,14 +451,14 @@ export default {
     const supabaseKey = env.SUPABASE_KEY;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-		const context: Context = {
-			supabase,
-			env,
-		}
+    const context: Context = {
+      supabase,
+      env,
+    };
 
     for (let chainName in CHAIN_CONFIG) {
       const chainConfig = CHAIN_CONFIG[chainName];
-      let lastBlockNumber = await getBlockNumber(context, chainName)
+      let lastBlockNumber = await getBlockNumber(context, chainName);
 
       console.log(lastBlockNumber, chainConfig.url);
 
@@ -422,26 +504,26 @@ export default {
         // Define an instance of the contract ABI.
         const iface = new ethers.utils.Interface(abi);
 
-        const logs = await provider.getLogs(filter)
-				const records: Record[] = []
+        const logs = await provider.getLogs(filter);
+        const records: Record[] = [];
 
-				logs.forEach((log) => {
-					const parsedLog = iface.parseLog(log);
-					console.log(
-						parsedLog.args.node.toString(),
-						parsedLog.args.name,
-						decodeName(parsedLog.args.name)
-					);
+        logs.forEach((log) => {
+          const parsedLog = iface.parseLog(log);
+          console.log(
+            parsedLog.args.node.toString(),
+            parsedLog.args.name,
+            decodeName(parsedLog.args.name)
+          );
 
-					records.push({
-						chain: chainName,
-						node: parsedLog.args.node.toString(),
-						name: decodeName(parsedLog.args.name),
-						owner: parsedLog.args.owner,
-						expiry: parsedLog.args.expiry.toNumber(),
-						block_number: log.blockNumber,
-					})
-				});
+          records.push({
+            chain: chainName,
+            node: parsedLog.args.node.toString(),
+            name: decodeName(parsedLog.args.name),
+            owner: parsedLog.args.owner,
+            expiry: parsedLog.args.expiry.toNumber(),
+            block_number: log.blockNumber,
+          });
+        });
 
         if (records.length > 0) {
           await insertRecords(context, records);
@@ -470,20 +552,25 @@ export default {
         // Define an instance of the contract ABI.
         const iface = new ethers.utils.Interface(abi);
 
-        const logs = await provider.getLogs(filter)
-        const records: RecordUpdate[] = []
+        const logs = await provider.getLogs(filter);
+        const records: RecordUpdate[] = [];
 
-				logs.forEach((log) => {
-					const parsedLog = iface.parseLog(log);
+        logs.forEach((log) => {
+          const parsedLog = iface.parseLog(log);
 
-          if (parsedLog.args.from != "0x0000000000000000000000000000000000000000") {
+          if (
+            parsedLog.args.from != "0x0000000000000000000000000000000000000000"
+          ) {
             records.push({
               chain: chainName,
-              node: ethers.utils.hexZeroPad(ethers.utils.hexlify(parsedLog.args.id), 32),
+              node: ethers.utils.hexZeroPad(
+                ethers.utils.hexlify(parsedLog.args.id),
+                32
+              ),
               owner: parsedLog.args.to,
-            })
+            });
           }
-				});
+        });
 
         if (records.length > 0) {
           await updateOwner(context, records);
@@ -512,22 +599,27 @@ export default {
         // Define an instance of the contract ABI.
         const iface = new ethers.utils.Interface(abi);
 
-        const logs = await provider.getLogs(filter)
-        const records: RecordUpdate[] = []
+        const logs = await provider.getLogs(filter);
+        const records: RecordUpdate[] = [];
 
-				logs.forEach((log) => {
-					const parsedLog = iface.parseLog(log);
+        logs.forEach((log) => {
+          const parsedLog = iface.parseLog(log);
 
-          if (parsedLog.args.from != "0x0000000000000000000000000000000000000000") {
+          if (
+            parsedLog.args.from != "0x0000000000000000000000000000000000000000"
+          ) {
             for (let i = 0; i < parsedLog.args.ids.length; i++) {
               records.push({
                 chain: chainName,
-                node: ethers.utils.hexZeroPad(ethers.utils.hexlify(parsedLog.args.ids[i]), 32),
+                node: ethers.utils.hexZeroPad(
+                  ethers.utils.hexlify(parsedLog.args.ids[i]),
+                  32
+                ),
                 owner: parsedLog.args.to,
-              })
+              });
             }
           }
-				});
+        });
 
         if (records.length > 0) {
           await updateOwner(context, records);
@@ -535,7 +627,7 @@ export default {
       }
 
       // Update block number forward
-      await updateBlockNumber(context, chainName, toBlock)
+      await updateBlockNumber(context, chainName, toBlock);
     }
   },
 };
