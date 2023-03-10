@@ -41,10 +41,10 @@ const CHAIN_CONFIG = {
   	url: `https://goerli.optimism.io`,
   	tags: ['test', 'use_root'],
   	chainId: 420,
-  	startingBlock: 6379000,
+  	startingBlock: 6506850,
     blockLimit: 1000,
-    contractAddress: "0x257fAeE65b16A74470ceFc3a87113f92C5A7A148",
-    registrarControllerAddress: "0xDDE3a172111533323f8f3C1e21c87905267a1844",
+    contractAddress: "0xeA926EB6996235c2b47F95B7BFF3F4058B988E35",
+    registrarControllerAddress: "0x2eAbd2A3d33B76B93866e365126373C510eBc676",
   },
   evm_84531: {
     url: `https://goerli.base.org`,
