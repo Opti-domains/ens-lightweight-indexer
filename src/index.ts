@@ -21,6 +21,7 @@ export interface Env {
   SUPABASE_KEY: string;
   DATA_TABLE: string;
   BACKEND_PK: string;
+  ETH_ARCHIVE_NODE: string;
 
   //
   // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
@@ -96,6 +97,15 @@ function decodeName(hex: string): string {
   return result.join(".").replace("\0", "");
 }
 
+class ResponseError extends Error {
+  status: number
+  
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
 interface Context {
   supabase: SupabaseClient;
   env: Env;
@@ -118,6 +128,15 @@ interface RecordUpdate {
 }
 
 // Get function
+export function getNameHash(domain: string, initialHash: string = '0x0000000000000000000000000000000000000000000000000000000000000000') {
+  const parts = domain.split('.').reverse();
+  let result = initialHash;
+  for (let part of parts) {
+    result = ethers.utils.solidityKeccak256(['bytes32', 'bytes32'], [result, ethers.utils.keccak256(ethers.utils.toUtf8Bytes(part))])
+  }
+  return result;
+}
+
 async function getRecord(context: Context, node: string, chain?: string) {
   let promise = context.supabase
     .from(context.env.DATA_TABLE)
@@ -252,6 +271,19 @@ async function updateBlockNumber(
   }
 }
 
+async function checkENSOwner(context: Context, owner: string, name: string): Promise<boolean> {
+  const provider = new ethers.providers.JsonRpcProvider({
+    url: context.env.ETH_ARCHIVE_NODE,
+    skipFetchSetup: true,
+  });
+
+  const address = await provider.resolveName(name);
+
+  if (!address) return true;
+
+  return address.toLowerCase() == owner.toLowerCase();
+}
+
 async function handleRequest(context: Context, route: string[], body: any) {
   switch (route[0]) {
     case "node": {
@@ -272,7 +304,7 @@ async function handleRequest(context: Context, route: string[], body: any) {
     case "commit": {
       // Sign commitment from backend
       if (!body.chainId) {
-        throw new Error("Chain ID is required");
+        throw new ResponseError(400, "Chain ID is required");
       }
 
       const chainName = "evm_" + body.chainId;
@@ -284,18 +316,23 @@ async function handleRequest(context: Context, route: string[], body: any) {
         skipFetchSetup: true,
       });
 
-      // If .base then check if owned .opti
+      // If .base then check if owned .op
       const parts: string[] = body.name.split(".")
       if (parts[parts.length - 1] == 'base') {
-        const records = await getRecordByName(context, parts.slice(0, -1).join('.') + '.opti')
+        const records = await getRecordByName(context, parts.slice(0, -1).join('.') + '.op')
         const record = records?.find(x => x.chain == 'evm_420')
         if (!record) {
-          throw new Error("Not owning .opti yet");
+          throw new ResponseError(400, "Not owning .op yet");
         }
 
         if (record.owner.toLowerCase() != body.owner.toLowerCase()) {
-          throw new Error("Not owner");
+          throw new ResponseError(400, "Not owner of .op domains");
         }
+      }
+
+      // check for .eth holding
+      if (!await checkENSOwner(context, body.owner, parts.slice(0, -1).join('.') + '.eth')) {
+        throw new ResponseError(400, "ENS domains is owned by other");
       }
 
       // Call the makeCommitment function with the specified value
