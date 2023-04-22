@@ -127,6 +127,52 @@ interface RecordUpdate {
   expiry?: number;
 }
 
+function registerSignature(pk, controller, chainId, commitment, isTakeover = false) {
+  // Define the input types and values of the transaction data
+  const inputTypes = [
+    'bytes1',
+    'bytes1',
+    'address',
+    'uint256',
+    'bytes32',
+    'bytes32',
+  ]
+  const inputValues = [
+    '0x19',
+    '0x00',
+    controller,
+    chainId,
+    isTakeover
+      ? '0x0548274c4be004976424de9f6f485fbe40a8f13e41524cd574fead54e448415c'
+      : '0xdd007bd789f73e08c2714644c55b11c7d202931d717def434e3c9caa12a9f583',
+    commitment,
+  ]
+
+  // ABI-encode the transaction data
+  const digest = ethers.utils.solidityKeccak256(inputTypes, inputValues)
+
+  // console.log(
+  //   digest,
+  //   controller.address,
+  //   network.config.chainId,
+  //   isTakeover
+  //     ? '0x0548274c4be004976424de9f6f485fbe40a8f13e41524cd574fead54e448415c'
+  //     : '0xdd007bd789f73e08c2714644c55b11c7d202931d717def434e3c9caa12a9f583',
+  //   commitment,
+  // )
+
+  const signingKey = new ethers.utils.SigningKey(pk)
+  const signature = signingKey.signDigest(digest)
+
+  return ethers.utils.hexlify(
+    ethers.utils.concat([
+      signature.r,
+      signature.s,
+      ethers.utils.hexlify(signature.v),
+    ]),
+  )
+}
+
 // Get function
 export function getNameHash(domain: string, initialHash: string = '0x0000000000000000000000000000000000000000000000000000000000000000') {
   const parts = domain.split('.').reverse();
@@ -344,7 +390,7 @@ async function handleRequest(context: Context, route: string[], body: any) {
       const commitment = await contract.makeCommitment(
         body.name,
         body.owner,
-        body.duration,
+        body.expiration,
         body.secret,
         body.resolver,
         body.data,
@@ -352,39 +398,7 @@ async function handleRequest(context: Context, route: string[], body: any) {
         body.ownerControlledFuses
       );
 
-      // const commitmentTimestamp = await contract.commitments(commitment);
-      const commitmentTimestamp = body.commitmentTimestamp;
-
-      // Define the input types and values of the transaction data
-      const inputTypes = ["bytes32", "uint256", "uint256"];
-      const inputValues = [commitment, commitmentTimestamp, body.chainId];
-
-      console.log(inputValues)
-
-      // ABI-encode the transaction data
-      const abiEncodedTransactionData = ethers.utils.defaultAbiCoder.encode(
-        inputTypes,
-        inputValues
-      );
-
-      console.log(ethers.utils.keccak256(abiEncodedTransactionData))
-
-      const signingKey = new ethers.utils.SigningKey(privateKey);
-      const signature = signingKey.signDigest(
-        ethers.utils.keccak256(abiEncodedTransactionData)
-      );
-
-      console.log(signature)
-
-      return {
-        signature: ethers.utils.hexlify(
-          ethers.utils.concat([
-            signature.r,
-            signature.s,
-            ethers.utils.hexlify(signature.v),
-          ])
-        ),
-      };
+      return await registerSignature(context.env.BACKEND_PK, chainConfig.registrarControllerAddress, body.chainId, commitment)
     }
   }
 }
