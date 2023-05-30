@@ -38,33 +38,69 @@ const corsHeaders = {
 };
 
 const CHAIN_CONFIG = {
+  // evm_31337: {
+  // 	url: `http://127.0.0.1:8545`,
+  // 	tags: ['test', 'use_root'],
+  // 	chainId: 31337,
+  // 	startingBlock: 1,
+  //   blockLimit: 100,
+  //   contractAddress: "0x888811a56d6816d86c81b60f47fd4dccbc03c2ee",
+  //   registrarControllerAddress: "0x8888112d0a6263aa401adda981238182764fdc41",
+  // },
   evm_420: {
   	url: `https://goerli.optimism.io`,
   	tags: ['test', 'use_root'],
   	chainId: 420,
   	startingBlock: 8355000,
     blockLimit: 1000,
-    contractAddress: "0x90b765bcb20121828Ec92ef957645d86722D16cA",
-    registrarControllerAddress: "0x3560E97fd220668eBF9189a9695aA111be33Af67",
+    contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+    registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
   },
-  // evm_84531: {
-  //   url: `https://goerli.base.org`,
-  //   tags: ["test", "use_root"],
-  //   chainId: 84531,
-  //   startingBlock: 1496000,
-  //   blockLimit: 1000,
-  //   contractAddress: "0x88D711a0BAc694e7C2D71Fcd7AC7896A02970911",
-  //   registrarControllerAddress: "0xE11572B0F18DC78F30cDDf44c402a5B79511105A",
+  // evm_1442: {
+  // 	url: `https://rpc.public.zkevm-test.net`,
+  // 	tags: ['test', 'use_root'],
+  // 	chainId: 1442,
+  // 	startingBlock: 47700,
+  //   blockLimit: 30,
+  //   contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+  //   registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
   // },
-  // evm_5: {
-  //   url: `https://eth-goerli.g.alchemy.com/v2/Kb0-sSQHUeURzm-QCj-pXKS0Viefa_kX`,
-  //   tags: ["test", "use_root"],
-  //   chainId: 5,
-  //   startingBlock: 8555300,
+  // evm_51: {
+  // 	url: `https://erpc.apothem.network`,
+  // 	tags: ['test', 'use_root'],
+  // 	chainId: 51,
+  // 	startingBlock: 60574800,
   //   blockLimit: 100,
-  //   contractAddress: "0x4a7c7a621834ae33282ae71e403b94ac11024070",
-  //   registrarControllerAddress: "",
+  //   contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+  //   registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
   // },
+  evm_10200: {
+  	url: `https://rpc.chiadochain.net`,
+  	tags: ['test', 'use_root'],
+  	chainId: 10200,
+  	startingBlock: 4049800,
+    blockLimit: 100,
+    contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+    registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
+  },
+  evm_84531: {
+    url: `https://goerli.base.org`,
+    tags: ["test", "use_root"],
+    chainId: 84531,
+    startingBlock: 5080400,
+    blockLimit: 100,
+    contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+    registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
+  },
+  evm_5: {
+    url: `https://eth-goerli.g.alchemy.com/v2/Kb0-sSQHUeURzm-QCj-pXKS0Viefa_kX`,
+    tags: ["test", "use_root"],
+    chainId: 5,
+    startingBlock: 9085000,
+    blockLimit: 50,
+    contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+    registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
+  },
   // evm_5: {
   //   url: `https://eth-goerli.g.alchemy.com/v2/Kb0-sSQHUeURzm-QCj-pXKS0Viefa_kX`,
   //   tags: ["test", "use_root"],
@@ -398,7 +434,11 @@ async function handleRequest(context: Context, route: string[], body: any) {
         body.ownerControlledFuses
       );
 
-      return await registerSignature(context.env.BACKEND_PK, chainConfig.registrarControllerAddress, body.chainId, commitment)
+      console.log(context.env.BACKEND_PK)
+
+      return {
+        signature: await registerSignature(context.env.BACKEND_PK, chainConfig.registrarControllerAddress, body.chainId, commitment),
+      }
     }
   }
 }
