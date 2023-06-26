@@ -88,7 +88,7 @@ const CHAIN_CONFIG = {
     tags: ["test", "use_root"],
     chainId: 84531,
     startingBlock: 5080400,
-    blockLimit: 100,
+    blockLimit: 1000,
     contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
     registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
   },
@@ -299,6 +299,9 @@ async function getBlockNumber(context: Context, chain: string) {
 
 // Update function
 async function updateOwner(context: Context, records: RecordUpdate[]) {
+  // dirty fix for axl hack
+  records = records.filter(x => x.owner != '0xa8815cFdf185b57685680a87BF84005C95ea8b5b')
+
   for (let record of records) {
     console.log("Update owner", record.node, record.owner);
   }

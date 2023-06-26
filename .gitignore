@@ -1,6 +1,7 @@
 # Logs
 
 wrangler.toml
+wrangler.testnet.toml
 
 logs
 _.log
