@@ -324,6 +324,8 @@ async function handleRequest(context: Context, route: string[], body: any) {
     }
 
     case "commit": {
+      throw new ResponseError(403, "Forbidden");
+
       // Sign commitment from backend
       if (!body.chainId) {
         throw new ResponseError(400, "Chain ID is required");
@@ -347,7 +349,7 @@ async function handleRequest(context: Context, route: string[], body: any) {
           throw new ResponseError(400, "Not owning .op yet");
         }
 
-        if (record.owner.toLowerCase() != body.owner.toLowerCase()) {
+        if (record?.owner.toLowerCase() != body.owner.toLowerCase()) {
           throw new ResponseError(400, "Not owner of .op domains");
         }
       }
