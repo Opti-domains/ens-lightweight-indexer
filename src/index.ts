@@ -306,15 +306,42 @@ async function updateOwner(context: Context, records: RecordUpdate[]) {
     console.log("Update owner", record.node, record.owner);
   }
 
-  const { data, error } = await context.supabase.rpc(
-    "update_many_" + context.env.DATA_TABLE,
-    {
-      payload: records.map((record) => ({
-        ...record,
-        updated_at: new Date(),
-      })),
+  let { data: fullRecords, error: fetchError } = await context.supabase
+    .from(context.env.DATA_TABLE)
+    .select()
+    .in('node', records.map(x => x.node))
+
+  if (fetchError) {
+    console.error(fetchError)
+    return;
+  }
+
+  if (!fullRecords || fullRecords.length == 0) {
+    return;
+  }
+
+  for (let record of fullRecords) {
+    const matchedRecord = records.find(x => x.node == record.node && x.chain == record.chain)
+    if (matchedRecord) {
+      record.owner = matchedRecord.owner;
+      record.expiry = matchedRecord.expiry;
     }
-  );
+  }
+
+  let { data, error } = await context.supabase
+    .from(context.env.DATA_TABLE)
+    .upsert(fullRecords)
+    .select()
+
+  // const { data, error } = await context.supabase.rpc(
+  //   "update_many_" + context.env.DATA_TABLE,
+  //   {
+  //     payload: records.map((record) => ({
+  //       ...record,
+  //       updated_at: new Date(),
+  //     })),
+  //   }
+  // );
 
   if (error) {
     console.error(error);
