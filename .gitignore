@@ -2,6 +2,7 @@
 
 wrangler.toml
 wrangler.testnet.toml
+wrangler.mainnet.toml
 
 logs
 _.log
