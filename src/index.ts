@@ -55,6 +55,8 @@ const CHAIN_CONFIG = {
     blockLimit: 100,
     contractAddress: "0xB02ED980693e14E082F0A3A33060046Ae8495EB2",
     registrarControllerAddress: "0xB02EDc247246ACD78294c62F403B3e64D5917031",
+    // contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+    // registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
   },
   // evm_420_op: {
   // 	url: `https://goerli.optimism.io`,
@@ -100,6 +102,8 @@ const CHAIN_CONFIG = {
     blockLimit: 100,
     contractAddress: "0xB02ED980693e14E082F0A3A33060046Ae8495EB2",
     registrarControllerAddress: "0xB02EDc247246ACD78294c62F403B3e64D5917031",
+    // contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+    // registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
   },
   // evm_84531_op: {
   //   url: `https://goerli.base.org`,
@@ -128,6 +132,15 @@ const CHAIN_CONFIG = {
   //   contractAddress: "0xa3412b5849f8ffE009Fc04A6cb177164eb5e909c",
   //   registrarControllerAddress: "0x3801e62AfF33B6D2708DcE97aa04611894f80a21",
   // },
+  evm_919: {
+    url: `https://sepolia.mode.network`,
+    tags: ["test", "use_root"],
+    chainId: 919,
+    startingBlock: 	2474500,
+    blockLimit: 100,
+    contractAddress: "0xB02ED980693e14E082F0A3A33060046Ae8495EB2",
+    registrarControllerAddress: "0xB02EDc247246ACD78294c62F403B3e64D5917031",
+  },
 };
 
 function decodeName(hex: string): string {
@@ -340,11 +353,14 @@ async function updateOwner(context: Context, records: RecordUpdate[]) {
 
   for (let record of fullRecords) {
     const matchedRecord = records.find(x => x.node == record.node && x.chain == record.chain)
+    // console.log(fullRecords)
     if (matchedRecord) {
       record.owner = matchedRecord.owner;
-      record.expiry = matchedRecord.expiry;
+      // record.expiry = record.expiry || matchedRecord.expiry;
     }
   }
+
+  // console.log(fullRecords)
 
   let { data, error } = await context.supabase
     .from(context.env.DATA_TABLE)
@@ -623,7 +639,7 @@ export default {
       });
       const headBlockNumber = await provider.getBlockNumber();
 
-      const fromBlock = lastBlockNumber;
+      const fromBlock = lastBlockNumber - Math.floor(chainConfig.blockLimit / 2);
       const toBlock = Math.min(
         headBlockNumber,
         lastBlockNumber + chainConfig.blockLimit
@@ -714,7 +730,8 @@ export default {
           const parsedLog = iface.parseLog(log);
 
           if (
-            parsedLog.args.from != "0x0000000000000000000000000000000000000000"
+            parsedLog.args.from != "0x0000000000000000000000000000000000000000" &&
+            parsedLog.args.to != "0x0000000000000000000000000000000000000000"
           ) {
             records.push({
               chain: chainName,
