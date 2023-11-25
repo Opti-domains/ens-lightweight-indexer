@@ -236,6 +236,7 @@ async function getBlockNumber(context: Context, chain: string) {
 
   if (error) {
     console.error(error);
+    throw new Error('Fetch block error please stop')
   }
 
   if (!data || !data.length) {
