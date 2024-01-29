@@ -49,6 +49,17 @@ const CHAIN_CONFIG = {
     // contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
     // registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
   },
+  evm_8453: {
+  	url: `https://thrumming-skilled-sound.base-mainnet.quiknode.pro/7954fd036f1adba3683d3361c5bc3270f7d538c0/`,
+  	tags: ['test', 'use_root'],
+  	chainId: 8453,
+  	startingBlock: 9728200,
+    blockLimit: 100,
+    contractAddress: "0xB02ED980693e14E082F0A3A33060046Ae8495EB2",
+    registrarControllerAddress: "0xB02EDc247246ACD78294c62F403B3e64D5917031",
+    // contractAddress: "0x888811F1B21176E15FB60DF500eA85B490Dd2836",
+    // registrarControllerAddress: "0x8888117A2d8cC4e02A9A9691Ba0e166b2842360D",
+  },
   // evm_420: {
   // 	url: `https://goerli.optimism.io`,
   // 	tags: ['test', 'use_root'],
